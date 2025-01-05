@@ -1,0 +1,266 @@
+﻿@page "/dashboard"
+
+
+
+<style>
+    /* Global styles */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        background: linear-gradient(135deg, #FFFAEC, #F5ECD5); /* Gradient background */
+    }
+
+    .container {
+        display: flex;
+        width: 100%;
+        max-width: 1200px;
+        height: auto;
+        background: #FFF;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+    }
+
+    /* Sidebar Styles */
+    .sidebar {
+        width: 30%; /* Increased width */
+        background: #E0E0E0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        border-right: 2px solid #D0D0D0;
+    }
+
+        .sidebar header {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #3D3D3D;
+            margin-bottom: 20px;
+        }
+
+        .sidebar nav a {
+            display: block;
+            text-decoration: none;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            color: #3D3D3D;
+            background: #FFF;
+            border-radius: 8px;
+            text-align: center;
+            transition: background 0.3s ease;
+        }
+
+            .sidebar nav a:hover {
+                background: #578E7E;
+                color: #FFFAEC;
+            }
+
+    /* Main Dashboard Content */
+    .main {
+        flex: 1;
+        background: #FFF;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+        .header h1 {
+            font-size: 1.8rem;
+            color: #3D3D3D;
+        }
+
+        .header h2 {
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+    .budget-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .budget-info {
+        width: 50%;
+    }
+
+        .budget-info h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #3D3D3D;
+        }
+
+        .budget-info p {
+            font-size: 1rem;
+            color: #666;
+        }
+
+    .graph-placeholder {
+        width: 50%;
+        height: 150px;
+        background: #E0E0E0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 8px;
+    }
+
+    .pending-debts {
+        margin: 20px 0;
+    }
+
+        .pending-debts header {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #3D3D3D;
+        }
+
+    .transactions-section {
+        margin: 20px 0;
+    }
+
+    .transactions-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+        .transactions-tabs button {
+            padding: 10px 20px;
+            border: none;
+            background: #E0E0E0;
+            color: #3D3D3D;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+            .transactions-tabs button:hover {
+                background: #578E7E;
+                color: #FFF;
+            }
+
+            .transactions-tabs button.active {
+                background: #578E7E;
+                color: #FFF;
+            }
+
+    .transaction-list {
+        list-style: none;
+        padding: 0;
+        border: 1px solid #E0E0E0;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+        .transaction-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #E0E0E0;
+        }
+
+            .transaction-list li:last-child {
+                border-bottom: none;
+            }
+</style>
+
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <header>Date: 2nd December</header>
+            <nav>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/transactions">Transactions</a>
+                <a href="/statistics">Statistics</a>
+                <a href="/debts">Debts</a>
+            </nav>
+        </aside>
+
+        <!-- Main Dashboard Content -->
+        <main class="main">
+            <div class="header">
+                <h1>Hello, Bashil</h1>
+                <h2>Dashboard</h2>
+            </div>
+
+            <!-- Budget and Graph Section -->
+            <div class="budget-section">
+                <div class="budget-info">
+                    <h3>Current Budget</h3>
+                    <p>Expenses: $2000 <br> Income: $1000 <br> Debts: $20200</p>
+                    <div class="pending-debts">
+                        <header>Pending Debts</header>
+                        <p>Aayush Borrow: $200</p>
+                        <p>Sanima Bank Loan: $20000</p>
+                    </div>
+                </div>
+                <div class="graph-placeholder">
+                    Graph Placeholder
+                </div>
+            </div>
+
+            <!-- Transactions Section -->
+            <div class="transactions-section">
+                <div class="transactions-tabs">
+                    <button class="active">All</button>
+                    <button>Expenses</button>
+                    <button>Income</button>
+                </div>
+                <ul class="transaction-list">
+                    <li>
+                        <span>Entertainment</span>
+                        <span>- $200</span>
+                    </li>
+                    <li>
+                        <span>Groceries</span>
+                        <span>- $20</span>
+                    </li>
+                    <li>
+                        <span>Salary</span>
+                        <span>+ $100</span>
+                    </li>
+                    <li>
+                        <span>Borrowed</span>
+                        <span>+ $220</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Additional Pending Debts -->
+            <div class="pending-debts">
+                <header>Pending Debts</header>
+                <p>Groceries: $200</p>
+                <p>Dad Loan: $1111</p>
+            </div>
+        </main>
+    </div>
+</body>
+
+
+@code {
+
+}

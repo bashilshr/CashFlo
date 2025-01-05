@@ -1,0 +1,182 @@
+﻿@page "/"
+@using CashFlo.Model
+@using CashFlo.Services.Interface
+@inject IUserServices UserServices
+@inject NavigationManager NavigationManager
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Inter', sans-serif;
+    }
+
+    body {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #E3FDFD, #FFE6FA);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .container {
+        max-width: 400px;
+        width: 100%;
+        background: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        padding: 2.5rem;
+    }
+
+    .form-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+        .form-header h1 {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-header p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+    }
+
+        form input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+
+            form input:focus {
+                border-color: #00A8CC;
+                outline: none;
+            }
+
+    .button {
+        background: linear-gradient(135deg, #6A11CB, #2575FC);
+        color: white;
+        font-size: 1rem;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
+        padding: 0.8rem;
+        cursor: pointer;
+        transition: background 0.3s;
+        text-align: center;
+    }
+
+        .button:hover {
+            background: linear-gradient(135deg, #2575FC, #6A11CB);
+        }
+
+    .error-message {
+        color: #E63946;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    .footer {
+        margin-top: 1.5rem;
+        text-align: center;
+    }
+
+        .footer p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .footer a {
+            color: #2575FC;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+
+            .footer a:hover {
+                color: #6A11CB;
+                text-decoration: underline;
+            }
+</style>
+
+<body>
+    <div class="container">
+        <div class="form-header">
+            <h1>Register</h1>
+            <p>Join us and start managing your finances with ease.</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <p class="error-message">@errorMessage</p>
+        }
+
+        <form @onsubmit="HandleRegistration">
+            <input type="text" @bind="Ragister.Username" placeholder="Username" required />
+            <input type="password" @bind="Ragister.Password" placeholder="Password" required />
+            <input type="password" @bind="confirmPassword" placeholder="Confirm Password" required />
+            <button type="submit" class="button">Register</button>
+        </form>
+
+        <div class="footer">
+            <p>
+                Already have an account?
+                <a href="/login">Log in here</a>
+            </p>
+        </div>
+    </div>
+</body>
+
+@code {
+    private User Ragister = new User();
+    private string confirmPassword = string.Empty;
+    private string errorMessage = string.Empty;
+
+    private void HandleRegistration()
+    {
+        // Validate input fields
+        if (string.IsNullOrWhiteSpace(Ragister.Username) || string.IsNullOrWhiteSpace(Ragister.Password) || string.IsNullOrWhiteSpace(confirmPassword))
+        {
+            errorMessage = "All fields are required!";
+            return;
+        }
+
+        // Ensure passwords match
+        if (Ragister.Password != confirmPassword)
+        {
+            errorMessage = "Passwords do not match!";
+            return;
+        }
+
+        // Attempt registration
+        var newUser = new User
+            {
+                Username = Ragister.Username,
+                Password = Ragister.Password
+            };
+
+        bool registrationSuccess = UserServices.Register(newUser);
+
+        if (registrationSuccess)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        else
+        {
+            errorMessage = "Username already exists!";
+        }
+    }
+}

@@ -1,0 +1,422 @@
+﻿@page "/transactions"
+@using CashFlo.Services.Interface
+@inject ITransactionService TransactionServices
+@inject IUserServices UserServices
+@using CashFlo.Model
+
+<div class="dashboard-container">
+    <div class="header">
+        <h3>Hello, @username</h3>
+        <div class="current-budget">
+            <p>
+                Current Budget: <b>@currentBudget.ToString("C", new System.Globalization.CultureInfo(selectedCurrency))</b>
+                <select @bind="selectedCurrency">
+                    <option value="en-US">USD</option>
+                    <option value="en-GB">GBP</option>
+                    <option value="en-IN">INR</option>
+                </select>
+            </p>
+        </div>
+    </div>
+
+    <div class="transactions-panel">
+        <div class="search-container">
+            <input type="text" @bind="searchText" placeholder="Search transactions (name/date/tags)..." />
+            <button @onclick="SearchTransactions">Search</button>
+            <select @bind="filterType">
+                <option value="all">All</option>
+                <option value="topIncome">Top Income</option>
+                <option value="topExpense">Top Expenses</option>
+            </select>
+        </div>
+
+        <div class="transactions-container">
+            @if (transactions == null || !transactions.Any())
+            {
+                <p>No transactions found.</p>
+            }
+            else
+            {
+                foreach (var group in transactions.GroupBy(t => t.Date.Date))
+                {
+                    <h4>Date: @group.Key.ToString("d")</h4>
+                    <ul>
+                        @foreach (var transaction in group)
+                        {
+                            <li>
+                                <b>@transaction.Category:</b> @transaction.Description -
+                                <span>@transaction.Amount.ToString("C", new System.Globalization.CultureInfo(selectedCurrency))</span>
+                                <span>[Tags: @string.Join(", ", transaction.Tags)]</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            }
+        </div>
+
+        <button @onclick="OpenAddTransactionPopup" class="add-transaction-btn">+</button>
+    </div>
+
+    @if (showAddTransactionPopup)
+    {
+        <div class="bottom-popup">
+            <h4>Add Transaction</h4>
+            <div>
+                <label>Type:</label>
+                <select @bind="newTransactionType">
+                    <option value="Expense">Expense</option>
+                    <option value="Income">Income</option>
+                </select>
+            </div>
+            <div>
+                <label>Category:</label>
+                <input type="text" @bind="newTransactionCategory" placeholder="Enter or select category" />
+            </div>
+            <div>
+                <label>Amount:</label>
+                <input type="number" @bind="newTransactionAmount" />
+            </div>
+            <div>
+                <label>Description:</label>
+                <input type="text" @bind="newTransactionDescription" />
+            </div>
+            <div>
+                <label>Tags:</label>
+                <div class="tags-container">
+                    @foreach (var tag in predefinedTags)
+                    {
+                        <button @onclick="() => AddTag(tag)">@tag</button>
+                    }
+                    @foreach (var tag in customTags)
+                    {
+                        <button @onclick="() => RemoveTag(tag)">@tag <span>X</span></button>
+                    }
+                    <input type="text" @bind="customTagInput" placeholder="Add custom tag" />
+                    <button @onclick="AddCustomTag">Add</button>
+                </div>
+            </div>
+            <button @onclick="AddTransaction">Add</button>
+            <button @onclick="CloseAddTransactionPopup">Cancel</button>
+        </div>
+    }
+</div>
+
+@code {
+    private string username = string.Empty;
+    private decimal currentBudget = 20000;
+    private string selectedCurrency = "en-US";
+    private List<TransactionM> transactions = new();
+    private string searchText = string.Empty;
+    private string filterType = "all";
+
+    private bool showAddTransactionPopup = false;
+    private string newTransactionType = "Expense";
+    private string newTransactionCategory = string.Empty;
+    private decimal newTransactionAmount;
+    private string newTransactionDescription = string.Empty;
+    private List<string> predefinedTags = new() { "Food", "Shopping", "Transport", "Entertainment" };
+    private List<string> customTags = new();
+    private string customTagInput = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        username = await UserServices.GetLoggedInUsernameAsync();
+        transactions = await TransactionServices.GetAllTransactionsAsync(username);
+    }
+
+    private async Task SearchTransactions()
+    {
+        transactions = await TransactionServices.SearchTransactionsAsync(username, searchText);
+    }
+
+    private void OpenAddTransactionPopup()
+    {
+        showAddTransactionPopup = true;
+    }
+
+    private void CloseAddTransactionPopup()
+    {
+        showAddTransactionPopup = false;
+    }
+
+    private void AddTag(string tag)
+    {
+        if (!customTags.Contains(tag))
+            customTags.Add(tag);
+    }
+
+    private void RemoveTag(string tag)
+    {
+        customTags.Remove(tag);
+    }
+
+    private void AddCustomTag()
+    {
+        if (!string.IsNullOrWhiteSpace(customTagInput) && !customTags.Contains(customTagInput))
+        {
+            customTags.Add(customTagInput);
+            customTagInput = string.Empty;
+        }
+    }
+
+    private async Task AddTransaction()
+    {
+        var newTransaction = new TransactionM
+            {
+                Username = username,
+                Amount = newTransactionType == "Expense" ? -newTransactionAmount : newTransactionAmount,
+                Date = DateTime.Now,
+                Category = newTransactionCategory,
+                Description = newTransactionDescription,
+                Tags = customTags
+            };
+
+        var success = await TransactionServices.AddTransactionAsync(newTransaction);
+        if (success)
+        {
+            transactions.Add(newTransaction);
+            CloseAddTransactionPopup();
+        }
+    }
+}
+<script>
+       /* General Styles */
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f9f9f9;
+        margin: 0;
+        padding: 0;
+        color: #333;
+    }
+
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Header Section */
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #ddd;
+        padding-bottom: 10px;
+    }
+
+    .header h3 {
+        margin: 0;
+        font-size: 24px;
+    }
+
+    .current-budget {
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .current-budget select {
+        padding: 5px;
+        font-size: 16px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    /* Search Bar */
+    .search-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .search-container input {
+        flex: 1;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .search-container button {
+        padding: 10px 20px;
+        font-size: 16px;
+        color: white;
+        background-color: #3498db;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+    .search-container button:hover {
+        background-color: #2980b9;
+    }
+
+    .search-container select {
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    /* Transactions Panel */
+    .transactions-container {
+        margin-top: 20px;
+    }
+
+    .transactions-container h4 {
+        font-size: 18px;
+        color: #555;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+    }
+
+    .transactions-container ul {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 20px 0;
+    }
+
+    .transactions-container li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .transactions-container li:last-child {
+        border-bottom: none;
+    }
+
+    .transactions-container b {
+        color: #333;
+    }
+
+    .transactions-container span {
+        font-size: 14px;
+        color: #777;
+    }
+
+    /* Add Transaction Button */
+    .add-transaction-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        background-color: #2ecc71;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 24px;
+        text-align: center;
+        line-height: 50px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+    .add-transaction-btn:hover {
+        background-color: #27ae60;
+    }
+
+    /* Add Transaction Popup */
+    .bottom-popup {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: white;
+        padding: 20px;
+        border-radius: 12px 12px 0 0;
+        box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+    }
+
+    .bottom-popup h4 {
+        font-size: 20px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .bottom-popup label {
+        display: block;
+        font-size: 16px;
+        margin-bottom: 5px;
+    }
+
+    .bottom-popup input,
+    .bottom-popup select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+    }
+
+    .bottom-popup .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .bottom-popup .tags-container button {
+        background-color: #3498db;
+        color: white;
+        padding: 5px 10px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+    .bottom-popup .tags-container button:hover {
+        background-color: #2980b9;
+    }
+
+    .bottom-popup .tags-container input {
+        flex: 1;
+        padding: 5px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .bottom-popup button {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        background-color: #2ecc71;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+        margin-top: 10px;
+    }
+
+    .bottom-popup button:hover {
+        background-color: #27ae60;
+    }
+
+    .bottom-popup button.cancel {
+        background-color: #e74c3c;
+    }
+
+    .bottom-popup button.cancel:hover {
+        background-color: #c0392b;
+    }
+
+
+</script>

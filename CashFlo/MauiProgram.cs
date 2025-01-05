@@ -1,4 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
+using CashFlo;
+using CashFlo.Services;
+using CashFlo.Services.Interface;
+using Radzen;
 
 namespace CashFlo
 {
@@ -15,10 +19,13 @@ namespace CashFlo
                 });
 
             builder.Services.AddMauiBlazorWebView();
+            builder.Services.AddScoped<IUserServices, UserServices>();
+            builder.Services.AddScoped<ITransactionService, TransactionServices>();
 
 #if DEBUG
-    		builder.Services.AddBlazorWebViewDeveloperTools();
-    		builder.Logging.AddDebug();
+            builder.Services.AddBlazorWebViewDeveloperTools();
+            builder.Logging.AddDebug();
+
 #endif
 
             return builder.Build();

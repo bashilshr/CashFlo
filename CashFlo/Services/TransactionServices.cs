@@ -4,13 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using CashFlo.Abstraction;
 using CashFlo.Model;
 using CashFlo.Services.Interface;
 
 namespace CashFlo.Services
 {
-    public class TransactionServices : UserBase, ITransactionService
+    public class TransactionServices : ITransactionService
     {
         private static readonly string FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "transactions.json");
 
@@ -27,29 +26,21 @@ namespace CashFlo.Services
             }
             catch (Exception)
             {
-                // Log or handle the exception
                 return new List<TransactionM>(); // Return an empty list on failure
             }
         }
 
-        // Search for transactions with filter and search text
+        // Search transactions with filter and search text
         public async Task<List<TransactionM>> SearchTransactionsAsync(string username, string searchText)
         {
             var allTransactions = await GetAllTransactionsAsync(username);
-            IEnumerable<TransactionM> filteredTransactions = allTransactions;
 
-            // Filter by search text
-            if (!string.IsNullOrEmpty(searchText))
-            {
-                filteredTransactions = filteredTransactions.Where(t =>
-                    t.Description.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                    t.Category.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                    (t.Tags != null && t.Tags.Any(tag => tag.Contains(searchText, StringComparison.OrdinalIgnoreCase))));
-            }
-
-            
-
-            return filteredTransactions.ToList();
+            return allTransactions.Where(t =>
+                (string.IsNullOrEmpty(searchText) ||
+                t.Description.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                t.Category.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                (t.Tags != null && t.Tags.Any(tag => tag.Contains(searchText, StringComparison.OrdinalIgnoreCase)))))
+                .ToList();
         }
 
         // Add a new transaction
@@ -66,7 +57,6 @@ namespace CashFlo.Services
             }
             catch (Exception ex)
             {
-                // Log or handle the exception
                 throw new InvalidOperationException("Failed to add transaction", ex);
             }
         }
@@ -94,7 +84,6 @@ namespace CashFlo.Services
             }
             catch (Exception ex)
             {
-                // Log or handle the exception
                 throw new InvalidOperationException("Failed to update transaction", ex);
             }
         }
@@ -117,7 +106,6 @@ namespace CashFlo.Services
             }
             catch (Exception ex)
             {
-                // Log or handle the exception
                 throw new InvalidOperationException("Failed to delete transaction", ex);
             }
         }
@@ -132,9 +120,18 @@ namespace CashFlo.Services
             }
             catch (Exception ex)
             {
-                // Log or handle the exception
                 throw new InvalidOperationException("Failed to save transactions", ex);
             }
+        }
+
+        // Paginate transactions
+        public async Task<List<TransactionM>> GetTransactionsWithPaginationAsync(string username, int pageNumber, int pageSize)
+        {
+            var allTransactions = await GetAllTransactionsAsync(username);
+            return allTransactions
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
         }
     }
 }

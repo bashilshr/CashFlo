@@ -14,19 +14,6 @@ namespace CashFlo.Model
         public TransactionType Type { get; set; } // Enum for Income/Expense
         public List<string> Tags { get; set; } = new List<string>(); // Tags for the transaction
 
-        // Static property for default tags
-        public static List<string> DefaultTags { get; } = new List<string>
-        {
-            "Groceries",
-            "Rent",
-            "Salary",
-            "Utilities",
-            "Dining",
-            "Travel",
-            "Shopping",
-            "Medical",
-            "Entertainment",
-            "Savings"
-        };
+        
     }
 }

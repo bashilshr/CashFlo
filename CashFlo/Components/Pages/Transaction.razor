@@ -3,420 +3,745 @@
 @inject ITransactionService TransactionServices
 @inject IUserServices UserServices
 @using CashFlo.Model
+@inject NavigationManager NavigationManager
 
-<div class="dashboard-container">
-    <div class="header">
-        <h3>Hello, @username</h3>
-        <div class="current-budget">
-            <p>
-                Current Budget: <b>@currentBudget.ToString("C", new System.Globalization.CultureInfo(selectedCurrency))</b>
-                <select @bind="selectedCurrency">
-                    <option value="en-US">USD</option>
-                    <option value="en-GB">GBP</option>
-                    <option value="en-IN">INR</option>
-                </select>
-            </p>
-        </div>
-    </div>
+<style>
+    /* General Styles */
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #f5f5f5;
+        color: #34495e;
+        margin: 0;
+        padding: 0;
+    }
 
-    <div class="transactions-panel">
-        <div class="search-container">
-            <input type="text" @bind="searchText" placeholder="Search transactions (name/date/tags)..." />
-            <button @onclick="SearchTransactions">Search</button>
-            <select @bind="filterType">
-                <option value="all">All</option>
-                <option value="topIncome">Top Income</option>
-                <option value="topExpense">Top Expenses</option>
-            </select>
-        </div>
+    .container {
+        max-width: 1100px;
+        margin: 30px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+    /* Balance Section Styles */
+    .balance-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        background-color: #f9f9f9;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
 
-        <div class="transactions-container">
-            @if (transactions == null || !transactions.Any())
-            {
-                <p>No transactions found.</p>
+        .balance-section h2 {
+            font-size: 22px;
+            margin: 0;
+            color: #34495e;
+        }
+
+    .balance-amount {
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+        .balance-amount.positive {
+            color: #27ae60; /* Green for positive balance */
+        }
+
+        .balance-amount.negative {
+            color: #e74c3c; /* Red for negative balance */
+        }
+
+    .main-layout {
+        display: flex;
+        width: 100%;
+    }
+
+    .sidebar {
+        width: 250px;
+        background-color: #34495e;
+        color: #ecf0f1;
+        padding: 20px;
+        height: 100vh;
+        border-radius: 8px;
+        box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
+    }
+
+        .sidebar h3 {
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+            .sidebar ul li {
+                margin-bottom: 15px;
             }
-            else
-            {
-                foreach (var group in transactions.GroupBy(t => t.Date.Date))
-                {
-                    <h4>Date: @group.Key.ToString("d")</h4>
-                    <ul>
-                        @foreach (var transaction in group)
-                        {
-                            <li>
-                                <b>@transaction.Category:</b> @transaction.Description -
-                                <span>@transaction.Amount.ToString("C", new System.Globalization.CultureInfo(selectedCurrency))</span>
-                                <span>[Tags: @string.Join(", ", transaction.Tags)]</span>
-                            </li>
-                        }
-                    </ul>
+
+                .sidebar ul li a {
+                    color: #ecf0f1;
+                    text-decoration: none;
+                    font-size: 16px;
+                    transition: color 0.3s;
                 }
-            }
-        </div>
 
-        <button @onclick="OpenAddTransactionPopup" class="add-transaction-btn">+</button>
+                    .sidebar ul li a:hover {
+                        color: #1abc9c;
+                    }
+
+    .content {
+        flex: 1;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+    }
+
+    /* Header */
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+
+        .header h1 {
+            margin: 0;
+            font-size: 26px;
+        }
+
+    /* Search Panel */
+    .search-panel {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .search-btn, .clear-btn {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 5px;
+        color: white;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background-color 0.3s;
+    }
+
+    .search-btn {
+        background-color: #3498db;
+    }
+
+        .search-btn:hover {
+            background-color: #2980b9;
+        }
+
+    .clear-btn {
+        background-color: #e74c3c;
+    }
+
+        .clear-btn:hover {
+            background-color: #c0392b;
+        }
+
+    /* Transaction Cards */
+    .transactions-panel {
+        margin-top: 20px;
+    }
+
+    .transaction-item {
+        padding: 15px;
+        background-color: #ecf0f1;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease;
+    }
+
+        .transaction-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .transaction-item.expense {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .transaction-item.income {
+            border-left: 4px solid #27ae60;
+        }
+
+        .transaction-item .details {
+            display: flex;
+            flex-direction: column;
+        }
+
+            .transaction-item .details span {
+                font-weight: bold;
+                color: #34495e;
+            }
+
+        .transaction-item .amount {
+            font-size: 18px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .transaction-item.expense .amount {
+            color: #e74c3c;
+        }
+
+    /* Transaction Actions */
+    .transaction-actions button {
+        margin-left: 10px;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.3s;
+    }
+
+    .transaction-actions .edit-btn {
+        background-color: #3498db;
+    }
+
+        .transaction-actions .edit-btn:hover {
+            background-color: #2980b9;
+        }
+
+    .transaction-actions .delete-btn {
+        background-color: #e74c3c;
+    }
+
+        .transaction-actions .delete-btn:hover {
+            background-color: #c0392b;
+        }
+
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .popup-content {
+        background: #ffffff;
+        padding: 40px;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        position: relative;
+    }
+
+        .popup-content h3 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #34495e;
+        }
+
+        .popup-content label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #34495e;
+        }
+
+        .popup-content input,
+        .popup-content select,
+        .popup-content button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .popup-content button {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+            .popup-content button:hover {
+                background-color: #27ae60;
+            }
+
+        .popup-content .cancel-btn {
+            background-color: #e74c3c;
+        }
+
+            .popup-content .cancel-btn:hover {
+                background-color: #c0392b;
+            }
+
+        .popup-content .tag-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .popup-content .tag-option {
+            background-color: #ecf0f1;
+            padding: 6px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+            .popup-content .tag-option:hover {
+                background-color: #bdc3c7;
+            }
+
+            .popup-content .tag-option.selected {
+                background-color: #3498db;
+                color: white;
+            }
+
+            .popup-content .tag-option .remove {
+                font-weight: bold;
+                cursor: pointer;
+            }
+
+        .popup-content .error-message {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .popup-content .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+    /* Tag Selection Section */
+    .tag-select {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .tag-option {
+        background-color: #ecf0f1;
+        padding: 6px 12px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 14px;
+        color: #34495e;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+        .tag-option:hover {
+            background-color: #d1d8e0;
+        }
+
+        .tag-option .remove {
+            color: #e74c3c;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+    .add-transaction-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #6A11CB, #2575FC);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 28px;
+        font-weight: bold;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .add-transaction-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .add-transaction-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+</style>
+
+<div class="main-layout">
+    <div class="sidebar">
+        <ul>
+            <li><NavLink href="/dashboard">Dashboard</NavLink></li>
+            <li><NavLink href="/transactions">Transactions</NavLink></li>
+            <li><NavLink href="/debt">Debt</NavLink></li>
+            <li><NavLink href="/statistics">Statistics</NavLink></li>
+            <li><NavLink href="/export">Export File</NavLink></li>
+            <li><NavLink href="/settings">Settings</NavLink></li>
+        </ul>
     </div>
 
-    @if (showAddTransactionPopup)
-    {
-        <div class="bottom-popup">
-            <h4>Add Transaction</h4>
-            <div>
-                <label>Type:</label>
-                <select @bind="newTransactionType">
-                    <option value="Expense">Expense</option>
-                    <option value="Income">Income</option>
-                </select>
+    <div class="content">
+        <div class="container">
+            <div class="header">
+                <h1>Welcome, @username</h1>
             </div>
-            <div>
-                <label>Category:</label>
-                <input type="text" @bind="newTransactionCategory" placeholder="Enter or select category" />
-            </div>
-            <div>
-                <label>Amount:</label>
-                <input type="number" @bind="newTransactionAmount" />
-            </div>
-            <div>
-                <label>Description:</label>
-                <input type="text" @bind="newTransactionDescription" />
-            </div>
-            <div>
-                <label>Tags:</label>
-                <div class="tags-container">
-                    @foreach (var tag in predefinedTags)
-                    {
-                        <button @onclick="() => AddTag(tag)">@tag</button>
-                    }
-                    @foreach (var tag in customTags)
-                    {
-                        <button @onclick="() => RemoveTag(tag)">@tag <span>X</span></button>
-                    }
-                    <input type="text" @bind="customTagInput" placeholder="Add custom tag" />
-                    <button @onclick="AddCustomTag">Add</button>
+            <div class="balance-section">
+                <h2>Total Balance</h2>
+                <div class="balance-amount @(totalBalance < 0 ? "negative" : "positive")">
+                    @totalBalance.ToString("C", new System.Globalization.CultureInfo(selectedCurrency))
                 </div>
             </div>
-            <button @onclick="AddTransaction">Add</button>
-            <button @onclick="CloseAddTransactionPopup">Cancel</button>
+
+            <div class="search-panel">
+                <input type="date" @bind="searchDate" class="search-input" />
+                <input type="text" @bind="searchTag" placeholder="Search by Tag" class="search-input" />
+                <button class="search-btn" @onclick="SearchTransactions">Search</button>
+                <button class="clear-btn" @onclick="ClearSearch">Clear</button>
+            </div>
+
+            <div class="transactions-panel">
+                @if (groupedTransactions.Any())
+                {
+                    @foreach (var group in groupedTransactions)
+                    {
+                        <div class="date-section">
+                            <div class="date-header">@group.Key.ToString("dddd, MMMM dd, yyyy")</div>
+                            @foreach (var transaction in group.Value)
+                            {
+                                <div class="transaction-item @(transaction.Amount < 0 ? "expense" : "income")">
+                                    <div class="details">
+                                        <span>@transaction.Category</span>
+                                        <small>@transaction.Description</small>
+                                    </div>
+                                    <div class="amount">@transaction.Amount.ToString("C", new System.Globalization.CultureInfo(selectedCurrency))</div>
+                                    <div class="transaction-actions">
+                                        <button class="edit-btn" @onclick="() => EditTransaction(transaction)">Edit</button>
+                                        <button class="delete-btn" @onclick="() => DeleteTransaction(transaction.Id)">Delete</button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>No transactions found.</p>
+                }
+
+                <!-- Floating Add Transaction Button -->
+                <button class="add-transaction-btn" @onclick="OpenAddTransactionPopup">+</button>
+            </div>
+
         </div>
-    }
+    </div>
 </div>
+    @if (showTransactionPopup)
+    {
+    <div class="popup-overlay">
+        <div class="popup-content">
+            <h3>@(isEditMode ? "Edit Transaction" : "Add Transaction")</h3>
+            <label>Transaction Type</label>
+            <select @bind="popupTransaction.Type">
+                <option value="Income">Income</option>
+                <option value="Expense">Expense</option>
+            </select>
+            <label>Category</label>
+            <input type="text" @bind="popupTransaction.Category" placeholder="Category" />
+            <label>Amount</label>
+            <input type="number" @bind="popupTransaction.Amount" placeholder="Amount" />
+            <label>Description</label>
+            <input type="text" @bind="popupTransaction.Description" placeholder="Description" />
+            <label>Date</label>
+            <input type="date" @bind="popupTransaction.Date" />
+
+            <!-- Tag Selection -->
+            <label>Tags</label>
+            <div class="tag-select">
+                @foreach (var tag in defaultTags)
+                {
+                    <div class="tag-option @(popupTransaction.Tags.Contains(tag) ? "selected" : "")" @onclick="() => ToggleTag(tag)">
+                        @tag
+                        @if (popupTransaction.Tags.Contains(tag))
+                        {
+                            <span class="remove">&times;</span>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Add Custom Tag -->
+            <div>
+                <label>Custom Tag:</label>
+                <div style="display: flex; gap: 50px; align-items: center;">
+                    <input type="text" @bind="customTag" placeholder="Add a custom tag" style="flex: 1.;" />
+                    <button @onclick="AddCustomTag" style="padding: 8px 8px; font-size: 14px;">Add</button>
+                </div>
+                <!-- Display the custom tags -->
+                <div class="tag-select">
+                    @foreach (var tag in popupTransaction.Tags)
+                    {
+                        <div class="tag-option">
+                            @tag
+                            <span class="remove" @onclick="() => RemoveTag(tag)">&times;</span>
+                        </div>
+                    }
+                </div>
+            </div>
+            <!-- Validation Error -->
+            @if (!string.IsNullOrEmpty(validationError))
+            {
+                <div class="error-message">@validationError</div>
+            }
+
+            <!-- Buttons -->
+            <div class="button-group">
+                <button @onclick="SaveTransaction">Save</button>
+                <button class="cancel-btn" @onclick="CloseTransactionPopup">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    }
+
 
 @code {
-    private string username = string.Empty;
-    private decimal currentBudget = 20000;
+    private string username;
     private string selectedCurrency = "en-US";
+    private bool showTransactionPopup = false;
+    private bool isEditMode = false;
+    private TransactionM popupTransaction;
     private List<TransactionM> transactions = new();
-    private string searchText = string.Empty;
-    private string filterType = "all";
+    private Dictionary<DateTime, List<TransactionM>> groupedTransactions = new();
+    private List<TransactionM> filteredTransactions = new();
 
-    private bool showAddTransactionPopup = false;
-    private string newTransactionType = "Expense";
-    private string newTransactionCategory = string.Empty;
-    private decimal newTransactionAmount;
-    private string newTransactionDescription = string.Empty;
-    private List<string> predefinedTags = new() { "Food", "Shopping", "Transport", "Entertainment" };
-    private List<string> customTags = new();
-    private string customTagInput = string.Empty;
+    private DateTime? searchDate;
+    private string searchTag;
+
+    private List<string> defaultTags = new() { "Food", "Travel", "Groceries", "Utilities" };
+    private string customTag;
+
+    private string validationError;
+    private decimal totalBalance;
 
     protected override async Task OnInitializedAsync()
     {
         username = await UserServices.GetLoggedInUsernameAsync();
         transactions = await TransactionServices.GetAllTransactionsAsync(username);
+        filteredTransactions = new List<TransactionM>(transactions);
+
+        GroupTransactionsByDate();
+        selectedCurrency = await UserServices.GetUserCurrencyAsync();
+        CalculateTotalBalance();
+
+        popupTransaction = CreateNewTransaction();
+        await base.OnInitializedAsync();
     }
 
-    private async Task SearchTransactions()
+    private TransactionM CreateNewTransaction()
     {
-        transactions = await TransactionServices.SearchTransactionsAsync(username, searchText);
+        return new TransactionM
+            {
+                Date = DateTime.Now,
+                Username = username,
+                Tags = new List<string>()
+            };
     }
 
     private void OpenAddTransactionPopup()
     {
-        showAddTransactionPopup = true;
+        isEditMode = false;
+        popupTransaction = CreateNewTransaction();
+        showTransactionPopup = true;
+        validationError = string.Empty;
     }
 
-    private void CloseAddTransactionPopup()
+    private void CloseTransactionPopup()
     {
-        showAddTransactionPopup = false;
+        popupTransaction = null;
+        showTransactionPopup = false;
+        validationError = string.Empty;
     }
 
-    private void AddTag(string tag)
+    private void EditTransaction(TransactionM transaction)
     {
-        if (!customTags.Contains(tag))
-            customTags.Add(tag);
+        isEditMode = true;
+        popupTransaction = new TransactionM
+            {
+                Id = transaction.Id,
+                Username = transaction.Username,
+                Amount = transaction.Amount,
+                Category = transaction.Category,
+                Description = transaction.Description,
+                Date = transaction.Date,
+                Type = transaction.Type,
+                Tags = new List<string>(transaction.Tags ?? new List<string>())
+            };
+        showTransactionPopup = true;
+        validationError = string.Empty;
     }
 
-    private void RemoveTag(string tag)
+    private async Task SaveTransaction()
     {
-        customTags.Remove(tag);
+        if (popupTransaction == null ||
+            string.IsNullOrWhiteSpace(popupTransaction.Category) ||
+            popupTransaction.Amount <= 0 ||
+            popupTransaction.Date == null ||
+            string.IsNullOrWhiteSpace(popupTransaction.Type.ToString()))
+        {
+            validationError = "All fields are required, and the amount must be greater than zero!";
+            return;
+        }
+
+        if (isEditMode)
+        {
+            await TransactionServices.UpdateTransactionAsync(popupTransaction);
+            var index = transactions.FindIndex(t => t.Id == popupTransaction.Id);
+            if (index >= 0)
+            {
+                transactions[index] = popupTransaction;
+            }
+        }
+        else
+        {
+            await TransactionServices.AddTransactionAsync(popupTransaction);
+            transactions.Add(popupTransaction);
+        }
+
+        filteredTransactions = new List<TransactionM>(transactions);
+        GroupTransactionsByDate();
+        CalculateTotalBalance();
+        CloseTransactionPopup();
+    }
+
+    private async Task DeleteTransaction(int transactionId)
+    {
+        await TransactionServices.DeleteTransactionAsync(transactionId, username);
+        transactions = transactions.Where(t => t.Id != transactionId).ToList();
+        filteredTransactions = new List<TransactionM>(transactions);
+        GroupTransactionsByDate();
+        CalculateTotalBalance();
+    }
+
+    private void GroupTransactionsByDate(List<TransactionM> source = null)
+    {
+        var dataToGroup = source ?? transactions;
+        groupedTransactions = dataToGroup
+            .GroupBy(t => t.Date.Date)
+            .ToDictionary(g => g.Key, g => g.ToList());
+    }
+
+    private void SearchTransactions()
+    {
+        filteredTransactions = new List<TransactionM>(transactions);
+
+        if (searchDate.HasValue)
+        {
+            filteredTransactions = filteredTransactions
+                .Where(t => t.Date.Date == searchDate.Value.Date)
+                .ToList();
+        }
+
+        if (!string.IsNullOrEmpty(searchTag))
+        {
+            filteredTransactions = filteredTransactions
+                .Where(t => t.Category.Contains(searchTag, StringComparison.OrdinalIgnoreCase) ||
+                            (t.Description?.Contains(searchTag, StringComparison.OrdinalIgnoreCase) ?? false))
+                .ToList();
+        }
+
+        GroupTransactionsByDate(filteredTransactions);
+    }
+
+    private void ClearSearch()
+    {
+        searchDate = null;
+        searchTag = string.Empty;
+        filteredTransactions = new List<TransactionM>(transactions);
+        GroupTransactionsByDate();
+    }
+
+    private void ToggleTag(string tag)
+    {
+        if (popupTransaction.Tags.Contains(tag))
+        {
+            popupTransaction.Tags.Remove(tag);
+        }
+        else
+        {
+            popupTransaction.Tags.Add(tag);
+        }
     }
 
     private void AddCustomTag()
     {
-        if (!string.IsNullOrWhiteSpace(customTagInput) && !customTags.Contains(customTagInput))
+        if (!string.IsNullOrWhiteSpace(customTag) && !popupTransaction.Tags.Contains(customTag))
         {
-            customTags.Add(customTagInput);
-            customTagInput = string.Empty;
+            popupTransaction.Tags.Add(customTag.Trim());
+            customTag = string.Empty;
         }
     }
 
-    private async Task AddTransaction()
+    private void RemoveTag(string tag)
     {
-        var newTransaction = new TransactionM
-            {
-                Username = username,
-                Amount = newTransactionType == "Expense" ? -newTransactionAmount : newTransactionAmount,
-                Date = DateTime.Now,
-                Category = newTransactionCategory,
-                Description = newTransactionDescription,
-                Tags = customTags
-            };
+        popupTransaction?.Tags.Remove(tag);
+    }
 
-        var success = await TransactionServices.AddTransactionAsync(newTransaction);
-        if (success)
-        {
-            transactions.Add(newTransaction);
-            CloseAddTransactionPopup();
-        }
+    private void CalculateTotalBalance()
+    {
+        var totalIncome = transactions
+            .Where(t => t.Type == TransactionType.Income)
+            .Sum(t => t.Amount);
+
+        var totalExpense = transactions
+            .Where(t => t.Type == TransactionType.Expense)
+            .Sum(t => t.Amount);
+
+        totalBalance = Math.Max(0, totalIncome - totalExpense);
     }
 }
-<script>
-       /* General Styles */
-    body {
-        font-family: 'Arial', sans-serif;
-        background-color: #f9f9f9;
-        margin: 0;
-        padding: 0;
-        color: #333;
-    }
 
-    .dashboard-container {
-        max-width: 1200px;
-        margin: 20px auto;
-        padding: 20px;
-        background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    /* Header Section */
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #ddd;
-        padding-bottom: 10px;
-    }
-
-    .header h3 {
-        margin: 0;
-        font-size: 24px;
-    }
-
-    .current-budget {
-        font-size: 18px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .current-budget select {
-        padding: 5px;
-        font-size: 16px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-
-    /* Search Bar */
-    .search-container {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 20px;
-    }
-
-    .search-container input {
-        flex: 1;
-        padding: 10px;
-        font-size: 16px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-    }
-
-    .search-container button {
-        padding: 10px 20px;
-        font-size: 16px;
-        color: white;
-        background-color: #3498db;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background 0.3s ease;
-    }
-
-    .search-container button:hover {
-        background-color: #2980b9;
-    }
-
-    .search-container select {
-        padding: 10px;
-        font-size: 16px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-
-    /* Transactions Panel */
-    .transactions-container {
-        margin-top: 20px;
-    }
-
-    .transactions-container h4 {
-        font-size: 18px;
-        color: #555;
-        border-bottom: 1px solid #ddd;
-        margin-bottom: 10px;
-        padding-bottom: 5px;
-    }
-
-    .transactions-container ul {
-        list-style: none;
-        padding: 0;
-        margin: 0 0 20px 0;
-    }
-
-    .transactions-container li {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 0;
-        border-bottom: 1px solid #eee;
-    }
-
-    .transactions-container li:last-child {
-        border-bottom: none;
-    }
-
-    .transactions-container b {
-        color: #333;
-    }
-
-    .transactions-container span {
-        font-size: 14px;
-        color: #777;
-    }
-
-    /* Add Transaction Button */
-    .add-transaction-btn {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 50px;
-        height: 50px;
-        background-color: #2ecc71;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        font-size: 24px;
-        text-align: center;
-        line-height: 50px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        cursor: pointer;
-        transition: background 0.3s ease;
-    }
-
-    .add-transaction-btn:hover {
-        background-color: #27ae60;
-    }
-
-    /* Add Transaction Popup */
-    .bottom-popup {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background-color: white;
-        padding: 20px;
-        border-radius: 12px 12px 0 0;
-        box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-    }
-
-    .bottom-popup h4 {
-        font-size: 20px;
-        margin-bottom: 20px;
-        text-align: center;
-    }
-
-    .bottom-popup label {
-        display: block;
-        font-size: 16px;
-        margin-bottom: 5px;
-    }
-
-    .bottom-popup input,
-    .bottom-popup select {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 15px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 16px;
-    }
-
-    .bottom-popup .tags-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 15px;
-    }
-
-    .bottom-popup .tags-container button {
-        background-color: #3498db;
-        color: white;
-        padding: 5px 10px;
-        border: none;
-        border-radius: 4px;
-        font-size: 14px;
-        cursor: pointer;
-        transition: background 0.3s ease;
-    }
-
-    .bottom-popup .tags-container button:hover {
-        background-color: #2980b9;
-    }
-
-    .bottom-popup .tags-container input {
-        flex: 1;
-        padding: 5px;
-        font-size: 14px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-    }
-
-    .bottom-popup button {
-        width: 100%;
-        padding: 10px;
-        font-size: 16px;
-        background-color: #2ecc71;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background 0.3s ease;
-        margin-top: 10px;
-    }
-
-    .bottom-popup button:hover {
-        background-color: #27ae60;
-    }
-
-    .bottom-popup button.cancel {
-        background-color: #e74c3c;
-    }
-
-    .bottom-popup button.cancel:hover {
-        background-color: #c0392b;
-    }
-
-
-</script>

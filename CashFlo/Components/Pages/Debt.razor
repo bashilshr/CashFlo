@@ -1,0 +1,418 @@
+﻿@page "/debt"
+@using CashFlo.Services.Interface
+@inject IDebtServices DebtServices
+@inject IUserServices UserServices
+@using CashFlo.Model
+@inject NavigationManager NavigationManager
+
+<style>
+    /* Same styles as for transaction page, can be reused */
+    .main-layout {
+        display: flex;
+        width: 100%;
+    }
+
+    /* Sidebar */
+    .sidebar {
+        width: 250px;
+        background-color: #2c3e50;
+        color: #ecf0f1;
+        padding: 20px;
+        height: 100vh;
+        border-radius: 8px;
+        box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+        .sidebar h3 {
+            font-size: 22px;
+            color: #ecf0f1;
+            margin-bottom: 20px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+            .sidebar ul li {
+                margin-bottom: 15px;
+            }
+
+                .sidebar ul li a {
+                    color: #ecf0f1;
+                    text-decoration: none;
+                    font-size: 16px;
+                    transition: color 0.3s;
+                }
+
+                    .sidebar ul li a:hover {
+                        color: #3498db;
+                    }
+
+    .content {
+        flex: 1;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+
+    .search-panel {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .search-btn, .clear-btn {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 5px;
+        color: white;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background-color 0.3s;
+    }
+
+    .search-btn {
+        background-color: #3498db;
+    }
+
+    .clear-btn {
+        background-color: #e74c3c;
+    }
+
+    .debt-panel {
+        margin-top: 20px;
+    }
+
+    .debt-item {
+        padding: 15px;
+        background-color: #ecf0f1;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+        .debt-item.paid {
+            border-left: 4px solid #27ae60;
+        }
+
+        .debt-item.unpaid {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .debt-item .details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .debt-item .amount {
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+
+    .debt-actions button {
+        margin-left: 10px;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .debt-actions .edit-btn {
+        background-color: #3498db;
+    }
+
+    .debt-actions .delete-btn {
+        background-color: #e74c3c;
+    }
+
+    .add-debt-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #6A11CB, #2575FC);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 28px;
+        font-weight: bold;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    /* Debt Popup */
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .popup-content {
+        background: #ffffff;
+        padding: 40px;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        position: relative;
+    }
+
+        .popup-content h3 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #34495e;
+        }
+
+        .popup-content label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #34495e;
+        }
+
+        .popup-content input,
+        .popup-content textarea,
+        .popup-content button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .popup-content button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+            .popup-content button:hover {
+                background-color: #2980b9;
+            }
+
+        .popup-content .cancel-btn {
+            background-color: #e74c3c;
+        }
+
+            .popup-content .cancel-btn:hover {
+                background-color: #c0392b;
+            }
+
+        .popup-content .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+</style>
+
+<div class="main-layout">
+    <div class="sidebar">
+        <ul>
+            <li><NavLink href="/dashboard">Dashboard</NavLink></li>
+            <li><NavLink href="/transactions">Transactions</NavLink></li>
+            <li><NavLink href="/debt">Debt</NavLink></li>
+            <li><NavLink href="/statistics">Statistics</NavLink></li>
+            <li><NavLink href="/export">Export File</NavLink></li>
+            <li><NavLink href="/settings">Settings</NavLink></li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <div class="container">
+            <div class="header">
+                <h1>Welcome, @username</h1>
+            </div>
+
+            <!-- Pending Debts Section -->
+            <h2>Pending Debts</h2>
+            <div class="debt-panel">
+                @if (debts.Any(d => d.Status == "Pending"))
+                {
+                    foreach (var debt in debts.Where(d => d.Status == "Pending"))
+                    {
+                        <div class="debt-item unpaid">
+                            <div class="details">
+                                <span>@debt.Lender</span>
+                                <small>@debt.DueDate.ToString("MMM dd, yyyy")</small>
+                            </div>
+                            <div class="amount">@debt.Amount.ToString("C", new System.Globalization.CultureInfo(selectedCurrency))</div>
+                            <div class="debt-actions">
+                                <button class="pay-btn" @onclick="() => PayDebt(debt.Id)">Pay</button>
+                                <button class="edit-btn" @onclick="() => EditDebt(debt)">Edit</button>
+                                <button class="delete-btn" @onclick="() => DeleteDebt(debt.Id)">Delete</button>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>No pending debts.</p>
+                }
+            </div>
+
+            <!-- Paid Debts Section -->
+            <h2>Paid Debts</h2>
+            <div class="debt-panel">
+                @if (debts.Any(d => d.Status == "Paid"))
+                {
+                    foreach (var debt in debts.Where(d => d.Status == "Paid"))
+                    {
+                        <div class="debt-item paid">
+                            <div class="details">
+                                <span>@debt.Lender</span>
+                                <small>@debt.DueDate.ToString("MMM dd, yyyy")</small>
+                            </div>
+                            <div class="amount">@debt.Amount.ToString("C", new System.Globalization.CultureInfo(selectedCurrency))</div>
+                            <div class="debt-actions">
+                                <button class="edit-btn" @onclick="() => EditDebt(debt)">Edit</button>
+                                <button class="delete-btn" @onclick="() => DeleteDebt(debt.Id)">Delete</button>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>No paid debts.</p>
+                }
+            </div>
+
+            <button class="add-debt-btn" @onclick="OpenAddDebtPopup">+</button>
+        </div>
+    </div>
+</div>
+
+@if (showDebtPopup)
+{
+    <div class="popup-overlay">
+        <div class="popup-content">
+            <h3>@(isEditMode ? "Edit Debt" : "Add Debt")</h3>
+
+            <label for="lender">Lender</label>
+            <input type="text" id="lender" @bind="popupDebt.Lender" placeholder="Enter lender name" />
+
+            <label for="amount">Amount</label>
+            <input type="number" id="amount" @bind="popupDebt.Amount" placeholder="Enter amount" />
+
+            <label for="dueDate">Due Date</label>
+            <input type="date" id="dueDate" @bind="popupDebt.DueDate" />
+
+            <label for="notes">Notes</label>
+            <textarea id="notes" @bind="popupDebt.Notes" placeholder="Additional notes" rows="3"></textarea>
+
+            <div class="button-group">
+                <button class="save-btn" @onclick="SaveDebt">@((isEditMode ? "Update" : "Save") + " Debt")</button>
+                <button class="cancel-btn" @onclick="CloseDebtPopup">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string username;
+    private decimal totalBalance;
+    private string selectedCurrency = "USD"; // Placeholder for currency selection
+    private string searchLender;
+    private bool showDebtPopup = false;
+    private CashFlo.Model.Debt popupDebt = new CashFlo.Model.Debt(); // Use CashFlo.Model.Debt
+    private bool isEditMode = false;
+    private Guid selectedDebtId;
+    private List<CashFlo.Model.Debt> debts; // Use CashFlo.Model.Debt
+    private List<string> allLenders;
+
+    protected override async Task OnInitializedAsync()
+    {
+        username = await UserServices.GetLoggedInUsernameAsync();
+        debts = DebtServices.GetAllDebts();
+        allLenders = debts.Select(d => d.Lender).Distinct().ToList();
+    }
+
+    private void OpenAddDebtPopup()
+    {
+        popupDebt = new CashFlo.Model.Debt();
+        showDebtPopup = true;
+        isEditMode = false;
+    }
+
+    private void EditDebt(CashFlo.Model.Debt debt)
+    {
+        popupDebt = debt;
+        showDebtPopup = true;
+        isEditMode = true;
+    }
+
+    private void SaveDebt()
+    {
+        if (isEditMode)
+        {
+            DebtServices.UpdateDebt(popupDebt);
+        }
+        else
+        {
+            DebtServices.AddDebt(popupDebt);
+        }
+
+        DebtServices.SaveDebts();
+        debts = DebtServices.GetAllDebts();
+        showDebtPopup = false;
+    }
+
+    private void DeleteDebt(Guid debtId)
+    {
+        DebtServices.DeleteDebt(debtId);
+        DebtServices.SaveDebts();
+        debts = DebtServices.GetAllDebts();
+    }
+
+    private void PayDebt(Guid debtId)
+    {
+        DebtServices.MarkDebtAsPaid(debtId);
+        DebtServices.SaveDebts();
+        debts = DebtServices.GetAllDebts();
+    }
+
+    private void CloseDebtPopup()
+    {
+        showDebtPopup = false;
+    }
+}

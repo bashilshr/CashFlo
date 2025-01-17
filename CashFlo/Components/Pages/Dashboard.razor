@@ -1,266 +1,167 @@
 ﻿@page "/dashboard"
-
-
+@using CashFlo.Services
+@using CashFlo.Services.Interface
+@inject IDebtServices DebtService
+@inject IUserServices UserService
+@inject CashFlo.Services.TransactionServices TransactionService
+@inject NavigationManager NavigationManager
 
 <style>
-    /* Global styles */
-    * {
+    body {
+        font-family: Arial, sans-serif;
         margin: 0;
         padding: 0;
-        box-sizing: border-box;
-        font-family: 'Poppins', sans-serif;
-    }
-
-    body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        margin: 0;
-        background: linear-gradient(135deg, #FFFAEC, #F5ECD5); /* Gradient background */
     }
 
     .container {
         display: flex;
-        width: 100%;
-        max-width: 1200px;
-        height: auto;
-        background: #FFF;
-        border-radius: 12px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        overflow: hidden;
+        height: 100vh;
     }
 
-    /* Sidebar Styles */
     .sidebar {
-        width: 30%; /* Increased width */
-        background: #E0E0E0;
+        width: 250px;
+        background-color: #2c3e50;
+        color: #ecf0f1;
         padding: 20px;
-        display: flex;
-        flex-direction: column;
-        border-right: 2px solid #D0D0D0;
+        height: 100%;
+        box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
     }
 
-        .sidebar header {
-            font-size: 1rem;
-            font-weight: bold;
-            color: #3D3D3D;
+        .sidebar h3 {
+            font-size: 22px;
+            color: #ecf0f1;
             margin-bottom: 20px;
         }
 
-        .sidebar nav a {
-            display: block;
-            text-decoration: none;
-            padding: 10px;
-            margin-bottom: 10px;
-            font-size: 1rem;
-            color: #3D3D3D;
-            background: #FFF;
-            border-radius: 8px;
-            text-align: center;
-            transition: background 0.3s ease;
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
         }
 
-            .sidebar nav a:hover {
-                background: #578E7E;
-                color: #FFFAEC;
+            .sidebar ul li {
+                margin-bottom: 15px;
             }
 
-    /* Main Dashboard Content */
-    .main {
+                .sidebar ul li a {
+                    color: #ecf0f1;
+                    text-decoration: none;
+                    font-size: 16px;
+                    transition: color 0.3s;
+                }
+
+                    .sidebar ul li a:hover {
+                        color: #3498db;
+                    }
+
+    .content {
         flex: 1;
-        background: #FFF;
         padding: 20px;
+        overflow-y: auto;
+    }
+
+    .dashboard-summary {
         display: flex;
-        flex-direction: column;
+        flex-wrap: wrap;
         gap: 20px;
     }
 
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-        .header h1 {
-            font-size: 1.8rem;
-            color: #3D3D3D;
-        }
-
-        .header h2 {
-            font-size: 1.2rem;
-            color: #666;
-        }
-
-    .budget-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 20px;
-    }
-
-    .budget-info {
-        width: 50%;
-    }
-
-        .budget-info h3 {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-            color: #3D3D3D;
-        }
-
-        .budget-info p {
-            font-size: 1rem;
-            color: #666;
-        }
-
-    .graph-placeholder {
-        width: 50%;
-        height: 150px;
-        background: #E0E0E0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+    .card {
+        background-color: #fff;
         border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        text-align: center;
+        flex: 1 1 calc(33.333% - 20px);
+        max-width: calc(33.333% - 20px);
+        transition: transform 0.2s ease-in-out;
     }
 
-    .pending-debts {
-        margin: 20px 0;
-    }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+        }
 
-        .pending-debts header {
-            font-size: 1.2rem;
+        .card h5 {
+            font-size: 1.25rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            font-size: 2rem;
             font-weight: bold;
-            margin-bottom: 10px;
-            color: #3D3D3D;
+            color: #4caf50;
+            margin: 0;
         }
 
-    .transactions-section {
-        margin: 20px 0;
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
     }
 
-    .transactions-tabs {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 10px;
-    }
-
-        .transactions-tabs button {
-            padding: 10px 20px;
-            border: none;
-            background: #E0E0E0;
-            color: #3D3D3D;
-            font-size: 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.3s ease;
+        .table th, .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border: 1px solid #dee2e6;
         }
 
-            .transactions-tabs button:hover {
-                background: #578E7E;
-                color: #FFF;
-            }
-
-            .transactions-tabs button.active {
-                background: #578E7E;
-                color: #FFF;
-            }
-
-    .transaction-list {
-        list-style: none;
-        padding: 0;
-        border: 1px solid #E0E0E0;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-        .transaction-list li {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            border-bottom: 1px solid #E0E0E0;
+        .table thead {
+            background-color: #f8f9fa;
         }
 
-            .transaction-list li:last-child {
-                border-bottom: none;
-            }
+    .table-hover tbody tr:hover {
+        background-color: #f1f3f5;
+    }
 </style>
 
-<body>
-    <div class="container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <header>Date: 2nd December</header>
-            <nav>
-                <a href="/dashboard">Dashboard</a>
-                <a href="/transactions">Transactions</a>
-                <a href="/statistics">Statistics</a>
-                <a href="/debts">Debts</a>
-            </nav>
-        </aside>
-
-        <!-- Main Dashboard Content -->
-        <main class="main">
-            <div class="header">
-                <h1>Hello, Bashil</h1>
-                <h2>Dashboard</h2>
-            </div>
-
-            <!-- Budget and Graph Section -->
-            <div class="budget-section">
-                <div class="budget-info">
-                    <h3>Current Budget</h3>
-                    <p>Expenses: $2000 <br> Income: $1000 <br> Debts: $20200</p>
-                    <div class="pending-debts">
-                        <header>Pending Debts</header>
-                        <p>Aayush Borrow: $200</p>
-                        <p>Sanima Bank Loan: $20000</p>
-                    </div>
-                </div>
-                <div class="graph-placeholder">
-                    Graph Placeholder
-                </div>
-            </div>
-
-            <!-- Transactions Section -->
-            <div class="transactions-section">
-                <div class="transactions-tabs">
-                    <button class="active">All</button>
-                    <button>Expenses</button>
-                    <button>Income</button>
-                </div>
-                <ul class="transaction-list">
-                    <li>
-                        <span>Entertainment</span>
-                        <span>- $200</span>
-                    </li>
-                    <li>
-                        <span>Groceries</span>
-                        <span>- $20</span>
-                    </li>
-                    <li>
-                        <span>Salary</span>
-                        <span>+ $100</span>
-                    </li>
-                    <li>
-                        <span>Borrowed</span>
-                        <span>+ $220</span>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- Additional Pending Debts -->
-            <div class="pending-debts">
-                <header>Pending Debts</header>
-                <p>Groceries: $200</p>
-                <p>Dad Loan: $1111</p>
-            </div>
-        </main>
+<div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h3>Menu</h3>
+        <ul>
+            <li><NavLink href="/dashboard">Dashboard</NavLink></li>
+            <li><NavLink href="/transactions">Transactions</NavLink></li>
+            <li><NavLink href="/debt">Debt</NavLink></li>
+        </ul>
     </div>
-</body>
 
+    <!-- Main Content -->
+    <div class="content">
+        <h3>Financial Dashboard</h3>
+
+        <!-- Summary Cards -->
+        <div class="dashboard-summary">
+            <div class="card">
+                <h5>Total Transactions</h5>
+                <p>@totalTransactionCount</p>
+            </div>
+            <div class="card">
+                <h5>Total Transaction Value</h5>
+                <p>@totalTransactionValue.ToString("C")</p>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
+    private int totalTransactionCount;
+    private decimal totalTransactionValue;
 
+    protected override void OnInitialized()
+    {
+        try
+        {
+            // Replace with actual logic to get logged-in username.
+            var username = "Admin";
+
+            // Fetch data synchronously.
+            totalTransactionCount = TransactionService.GetTotalTransactionCount(username);
+            totalTransactionValue = TransactionService.GetTotalTransactionValue(username);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading dashboard data: {ex.Message}");
+        }
+    }
 }

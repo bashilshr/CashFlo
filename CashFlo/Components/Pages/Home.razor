@@ -7,131 +7,131 @@
 <style>
     /* Existing styles */
     * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
     }
 
     body {
-        min-height: 100vh;
-        width: 100%;
-        background-image: url('/images/loginBg.png');
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 0 20px;
+    min-height: 100vh;
+    width: 100%;
+    background-image: url('/images/loginBg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 20px;
     }
 
     .container {
-        max-width: 430px;
-        width: 100%;
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 10px;
-        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
-        padding: 2.5rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+    max-width: 430px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     }
 
     .form {
-        width: 100%;
+    width: 100%;
     }
 
-        .form header {
-            font-size: 2rem;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 1.5rem;
-            color: #333;
-        }
+    .form header {
+    font-size: 2rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #333;
+    }
 
-        .form p.slogan {
-            font-size: 1rem;
-            color: #666;
-            text-align: center;
-            margin-bottom: 2rem;
-            max-width: 80%;
-            line-height: 1.4;
-            word-wrap: break-word;
-            margin: 0 auto;
-            margin-bottom: 10px;
-        }
+    .form p.slogan {
+    font-size: 1rem;
+    color: #666;
+    text-align: center;
+    margin-bottom: 2rem;
+    max-width: 80%;
+    line-height: 1.4;
+    word-wrap: break-word;
+    margin: 0 auto;
+    margin-bottom: 10px;
+    }
 
-        .form input {
-            height: 50px;
-            width: 100%;
-            padding: 0 15px;
-            font-size: 16px;
-            margin-bottom: 1.3rem;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            outline: none;
-            transition: 0.3s;
-        }
+    .form input {
+    height: 50px;
+    width: 100%;
+    padding: 0 15px;
+    font-size: 16px;
+    margin-bottom: 1.3rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    outline: none;
+    transition: 0.3s;
+    }
 
-            .form input:focus {
-                border-color: #009579;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            }
+    .form input:focus {
+    border-color: #009579;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
 
-            .form input.button {
-                color: #fff;
-                background: #f1c40f;
-                font-size: 1.2rem;
-                font-weight: 500;
-                letter-spacing: 1px;
-                cursor: pointer;
-                border: none;
-                padding: 12px 0;
-                border-radius: 6px;
-                transition: 0.3s;
-            }
+    .form input.button {
+    color: #fff;
+    background: #f1c40f;
+    font-size: 1.2rem;
+    font-weight: 500;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border: none;
+    padding: 12px 0;
+    border-radius: 6px;
+    transition: 0.3s;
+    }
 
-                .form input.button:hover {
-                    background: #f39c12;
-                }
+    .form input.button:hover {
+    background: #f39c12;
+    }
 
-        .form a {
-            font-size: 16px;
-            color: #009579;
-            text-decoration: none;
-            text-align: center;
-            display: block;
-            margin-top: 1rem;
-        }
+    .form a {
+    font-size: 16px;
+    color: #009579;
+    text-decoration: none;
+    text-align: center;
+    display: block;
+    margin-top: 1rem;
+    }
 
-            .form a:hover {
-                text-decoration: underline;
-            }
+    .form a:hover {
+    text-decoration: underline;
+    }
 
     .comp {
-        font-size: 30px !important;
-        text-align: center !important;
-        color: grey !important;
+    font-size: 30px !important;
+    text-align: center !important;
+    color: grey !important;
     }
 
     .logo {
-        width: 40px;
-        margin-right: 10px;
-        vertical-align: middle;
+    width: 40px;
+    margin-right: 10px;
+    vertical-align: middle;
     }
 
     .error-message {
-        color: red;
-        text-align: center;
-        font-size: 1rem;
-        margin-top: 10px;
+    color: red;
+    text-align: center;
+    font-size: 1rem;
+    margin-top: 10px;
     }
 
     img {
-        max-width: 100%;
-        height: auto;
-        max-height: 150px;
+    max-width: 100%;
+    height: auto;
+    max-height: 150px;
     }
 </style>
 
@@ -141,11 +141,11 @@
             <p class="comp">Register</p>
             @if (string.IsNullOrEmpty(errorMessage))
             {
-                    <p class="slogan">Manage smarter</p>
+                <p class="slogan">Manage smarter</p>
             }
             else
             {
-                    <p class="error-message">@errorMessage</p>
+                <p class="error-message">@errorMessage</p>
             }
 
             <form @onsubmit="HandleRegistration">
@@ -185,19 +185,5 @@
                 Username = RegisterModel.Username,
                 Password = RegisterModel.Password
             };
-
-        // Try to register the new user using UserService
-        bool registrationSuccess = UserServices.Register(newUser);
-
-        if (registrationSuccess)
-        {
-            // Registration successful, navigate to the login page
-            NavigationManager.NavigateTo("/login");
-        }
-        else
-        {
-            // Registration failed: username already exists
-            errorMessage = "Username already exists!";
-        }
     }
 }

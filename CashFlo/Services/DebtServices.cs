@@ -11,14 +11,9 @@ namespace CashFlo.Services
     public class DebtServices : IDebtServices
     {
         // Set the file path to a writable location in the user's AppData folder
-        private static readonly string FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CashFlo", "debts.json");
+        protected static readonly string FilePath = Path.Combine(FileSystem.AppDataDirectory, "debt.json");
 
         private List<Debt> debts;
-
-        public DebtServices()
-        {
-            LoadDebts();
-        }
 
         public void AddDebt(Debt debt)
         {
@@ -33,7 +28,7 @@ namespace CashFlo.Services
             if (debt == null)
                 return false;
 
-            debt.Status = "Paid";
+            debt.Status = DebtStatus.Paid;  // Correcting the enum value
             SaveDebts();
             return true;
         }
@@ -99,9 +94,12 @@ namespace CashFlo.Services
             }
         }
 
-        public List<Debt> GetDebtsByStatus(DebtStatus Status)
+        public List<Debt> GetDebtsByStatus(DebtStatus status)
         {
-            throw new NotImplementedException();
+            return debts.Where(d => d.Status == status).ToList();  // Returning debts based on the given status
         }
+        
     }
+
+
 }

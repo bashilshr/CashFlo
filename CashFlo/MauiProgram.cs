@@ -21,7 +21,9 @@ namespace CashFlo
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddScoped<IUserServices, UserServices>();
             builder.Services.AddScoped<ITransactionService, TransactionServices>();
+            builder.Services.AddSingleton< UserServices>();
             builder.Services.AddScoped<IDebtServices, DebtServices>();
+            builder.Services.AddSingleton<TransactionServices>();
 
 
 #if DEBUG

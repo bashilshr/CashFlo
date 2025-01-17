@@ -8,8 +8,10 @@ using CashFlo.Model;
 namespace CashFlo.Abstraction;
 public abstract class UserBase
 {
-    protected static readonly string FilePath = Path.Combine(FileSystem.AppDataDirectory, "users.json");
-
+    public static string FilePath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "CashFlo",
+        "users.json");
     protected List<User> LoadUsers()
     {
         if (!File.Exists(FilePath)) return new List<User>();

@@ -62,7 +62,7 @@ namespace CashFlo.Services
         public bool AddTransaction(TransactionM transaction)
         {
             var transactions = LoadTransactions();
-            transaction.Id = transactions.Any() ? transactions.Max(t => t.Id) + 1 : 1; // Generate a new ID
+            transaction.Id = transactions.Any() ? transactions.Max(t => t.Id) + 1 : 1; 
             transactions.Add(transaction);
             SaveTransactions(transactions);
             return true;
@@ -81,13 +81,6 @@ namespace CashFlo.Services
                 return true;
             }
             return false;
-        }
-
-        // Get transactions with pagination
-        public List<TransactionM> GetTransactionsWithPagination(string username, int pageNumber, int pageSize)
-        {
-            var transactions = GetAllTransactions(username);
-            return transactions.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
         }
 
         // Get total balance for a user
@@ -137,11 +130,11 @@ namespace CashFlo.Services
 
             foreach (var transaction in transactions)
             {
-                if (transaction.Type == "Income" )  // Inflows and debts
+                if (transaction.Type == "Income" )  
                 {
                     totalAmount += transaction.Amount;
                 }
-                else if (transaction.Type == "Expenses")  // Outflows
+                else if (transaction.Type == "Expenses")  
                 {
                     totalAmount -= transaction.Amount;
                 }

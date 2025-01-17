@@ -6,13 +6,11 @@
 @inject NavigationManager NavigationManager
 
 <style>
-    /* Same styles as for transaction page, can be reused */
     .main-layout {
         display: flex;
         width: 100%;
     }
 
-    /* Sidebar */
     .sidebar {
         width: 250px;
         background-color: #2c3e50;
@@ -244,6 +242,45 @@
             gap: 10px;
             justify-content: flex-end;
         }
+    /* Pay Button Design */
+    .pay-btn {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #6A11CB, #2575FC); 
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+    }
+
+        .pay-btn:hover {
+            background-color: #4e86d4; /* Lighter hover color */
+            transform: translateY(-2px); /* Button lift effect */
+        }
+
+        .pay-btn:active {
+            background-color: #1c58a5; /* Darker active color */
+            transform: translateY(0); /* Reset lift effect */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Active shadow effect */
+        }
+
+    .total-debt {
+        font-size: 1.2em;
+        margin: 20px 0;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        text-align: center;
+        color: #333;
+    }
+
+        .total-debt strong {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
 </style>
 
 <div class="main-layout">
@@ -252,29 +289,31 @@
             <li><NavLink href="/dashboard">Dashboard</NavLink></li>
             <li><NavLink href="/transactions">Transactions</NavLink></li>
             <li><NavLink href="/debt">Debt</NavLink></li>
-            <li><NavLink href="/statistics">Statistics</NavLink></li>
-            <li><NavLink href="/export">Export File</NavLink></li>
-            <li><NavLink href="/settings">Settings</NavLink></li>
         </ul>
     </div>
 
     <div class="content">
         <div class="container">
             <div class="header">
-                <h1>Welcome, @username</h1>
+                <h1>Debt</h1>
+            </div>
+            <div class="total-debt">
+                <span>Total Debt: </span>
+                <strong>@GetTotalDebt().ToString("C", new System.Globalization.CultureInfo(selectedCurrency))</strong>
             </div>
 
             <!-- Pending Debts Section -->
             <h2>Pending Debts</h2>
             <div class="debt-panel">
-                @if (debts.Any(d => d.Status == "Pending"))
+                @if (debts.Any(d => d.Status == DebtStatus.Pending))
                 {
-                    foreach (var debt in debts.Where(d => d.Status == "Pending"))
+                    foreach (var debt in debts.Where(d => d.Status == DebtStatus.Pending))
                     {
                         <div class="debt-item unpaid">
                             <div class="details">
                                 <span>@debt.Lender</span>
                                 <small>@debt.DueDate.ToString("MMM dd, yyyy")</small>
+                                <span>Status: <strong>@debt.Status.ToString()</strong></span>
                             </div>
                             <div class="amount">@debt.Amount.ToString("C", new System.Globalization.CultureInfo(selectedCurrency))</div>
                             <div class="debt-actions">
@@ -294,14 +333,15 @@
             <!-- Paid Debts Section -->
             <h2>Paid Debts</h2>
             <div class="debt-panel">
-                @if (debts.Any(d => d.Status == "Paid"))
+                @if (debts.Any(d => d.Status == DebtStatus.Paid))
                 {
-                    foreach (var debt in debts.Where(d => d.Status == "Paid"))
+                    foreach (var debt in debts.Where(d => d.Status == DebtStatus.Paid))
                     {
                         <div class="debt-item paid">
                             <div class="details">
                                 <span>@debt.Lender</span>
                                 <small>@debt.DueDate.ToString("MMM dd, yyyy")</small>
+                                <span>Status: <strong>@debt.Status.ToString()</strong></span>
                             </div>
                             <div class="amount">@debt.Amount.ToString("C", new System.Globalization.CultureInfo(selectedCurrency))</div>
                             <div class="debt-actions">
@@ -360,12 +400,13 @@
     private List<CashFlo.Model.Debt> debts; // Use CashFlo.Model.Debt
     private List<string> allLenders;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        username = await UserServices.GetLoggedInUsernameAsync();
+        username = UserServices.GetLoggedInUsername();
         debts = DebtServices.GetAllDebts();
         allLenders = debts.Select(d => d.Lender).Distinct().ToList();
     }
+
 
     private void OpenAddDebtPopup()
     {
@@ -391,28 +432,31 @@
         {
             DebtServices.AddDebt(popupDebt);
         }
+        CloseDebtPopup();
+        debts = DebtServices.GetAllDebts(); 
 
-        DebtServices.SaveDebts();
-        debts = DebtServices.GetAllDebts();
+    }
+    private decimal GetTotalDebt()
+    {
+        return debts.Where(d => d.Status == DebtStatus.Pending).Sum(d => d.Amount);
+    }
+
+
+    private void CloseDebtPopup()
+    {
         showDebtPopup = false;
+        debts = DebtServices.GetAllDebts(); // Refresh list after saving
     }
 
     private void DeleteDebt(Guid debtId)
     {
         DebtServices.DeleteDebt(debtId);
-        DebtServices.SaveDebts();
-        debts = DebtServices.GetAllDebts();
+        debts = DebtServices.GetAllDebts(); // Refresh list after deletion
     }
 
     private void PayDebt(Guid debtId)
     {
         DebtServices.MarkDebtAsPaid(debtId);
-        DebtServices.SaveDebts();
-        debts = DebtServices.GetAllDebts();
-    }
-
-    private void CloseDebtPopup()
-    {
-        showDebtPopup = false;
+        debts = DebtServices.GetAllDebts(); // Refresh list after payment
     }
 }

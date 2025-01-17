@@ -9,7 +9,6 @@ namespace CashFlo.Model
     public enum DebtStatus
     {
         Pending,
-        Paid,
-        Overdue
+        Paid
     }
 }

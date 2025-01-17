@@ -1,147 +1,147 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography; // For salt generation
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Newtonsoft.Json;
+using System.Security.Cryptography;
 using CashFlo.Model;
-using CashFlo.Services.Interface;
 using CashFlo.Abstraction;
-using Microsoft.AspNetCore.Cryptography.KeyDerivation; // For password hashing
+using CashFlo.Services.Interface;
 
-namespace CashFlo.Services
+public class UserServices : UserBase, IUserServices
 {
-    public class UserServices : UserBase, 
-        IUserServices
+    private User _user;
+    protected static readonly string UserFilePath = Path.Combine(FileSystem.AppDataDirectory, "user.json");
+
+    public const string SeedUsername = "admin";
+    public const string SeedPassword = "password";
+
+    public UserServices()
     {
-        private List<User> _users;
+        _user = LoadUser();
 
-        public const string SeedUsername = "admin";
-        public const string SeedPassword = "password";
-
-        public UserServices()
+        // Seed admin if no user exists
+        if (_user == null)
         {
-            _users = LoadUsers();
-
-            if (!_users.Any())
-            {
-                var salt = GenerateSalt();
-                var hashedPassword = HashPassword(SeedPassword, salt);
-
-                _users.Add(new User
-                {
-                    Username = SeedUsername,
-                    Password = hashedPassword,
-                    Salt = Convert.ToBase64String(salt),
-                    PrimaryBalance = 1000 // Default initial balance for admin
-                });
-                SaveUsers(_users);
-            }
-        }
-
-        public bool DeleteUser(string username)
-        {
-            var user = _users.FirstOrDefault(u => u.Username == username);
-            if (user == null)
-                return false;
-
-            _users.Remove(user);
-            SaveUsers(_users);
-            return true;
-        }
-
-        public List<User> GetAllUsers() => _users;
-
-        public bool Login(User user)
-        {
-            if (string.IsNullOrEmpty(user.Username) || string.IsNullOrEmpty(user.Password))
-                return false;
-
-            var existingUser = _users.FirstOrDefault(u => u.Username == user.Username);
-            if (existingUser == null) return false;
-
-            var salt = Convert.FromBase64String(existingUser.Salt);
-            var hashedPassword = HashPassword(user.Password, salt);
-
-            return existingUser.Password == hashedPassword;
-        }
-
-        public bool Register(User user)
-        {
-            if (_users.Any(u => u.Username == user.Username))
-                return false;
-
             var salt = GenerateSalt();
-            var hashedPassword = HashPassword(user.Password, salt);
+            var hashedPassword = HashPassword(SeedPassword, salt);
 
-            _users.Add(new User
+            _user = new User
             {
-                Username = user.Username,
+                Username = SeedUsername,
                 Password = hashedPassword,
                 Salt = Convert.ToBase64String(salt),
-                PrimaryBalance = 0 // Default balance for new users
-            });
-            SaveUsers(_users);
-            return true;
+                PrimaryBalance = 1000 // Default initial balance for admin
+            };
+            SaveUser(_user);
         }
-
-        private string HashPassword(string password, byte[] salt)
-        {
-            return Convert.ToBase64String(KeyDerivation.Pbkdf2(
-                password: password,
-                salt: salt,
-                prf: KeyDerivationPrf.HMACSHA256,
-                iterationCount: 10000,
-                numBytesRequested: 256 / 8));
-        }
-
-        private byte[] GenerateSalt()
-        {
-            byte[] salt = new byte[128 / 8]; // 16 bytes
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(salt);
-            }
-            return salt;
-        }
-
-        public async Task<string> GetLoggedInUsernameAsync()
-        {
-            return await Task.FromResult("LoggedInUsername");
-        }
-
-        public async Task<decimal> GetPrimaryBalanceAsync(string username)
-        {
-            var user = _users.FirstOrDefault(u => u.Username == username);
-            if (user == null)
-                throw new InvalidOperationException("User not found.");
-            return await Task.FromResult(user.PrimaryBalance);
-        }
-
-        public async Task<bool> UpdatePrimaryBalanceAsync(string username, int amount, bool isCredit)
-        {
-            var user = _users.FirstOrDefault(u => u.Username == username);
-            if (user == null)
-                return false;
-
-            if (!isCredit && user.PrimaryBalance < amount)
-                return false; // Insufficient balance
-
-            user.PrimaryBalance += isCredit ? amount : -amount;
-            SaveUsers(_users);
-            return await Task.FromResult(true);
-        }
-
-
-        public async Task<bool> LogoutAsync()
-        {
-            return await Task.FromResult(true);
-        }
-
-        public async Task<string> GetUserCurrencyAsync()
-        {
-            return await Task.FromResult("en-US");
-        }
-
     }
+
+    // Implementing DeleteUser(string) as per the interface
+    public bool DeleteUser(string username)
+    {
+        if (_user == null || _user.Username != username)
+            return false;
+
+        _user = null;
+        File.Delete(UserFilePath); // Delete the user file
+        return true;
+    }
+
+
+    public bool Login(User user)
+    {
+        if (string.IsNullOrEmpty(user.Username) || string.IsNullOrEmpty(user.Password))
+            return false;
+
+        if (_user == null || _user.Username != user.Username) return false;
+
+        var salt = Convert.FromBase64String(_user.Salt);
+        var hashedPassword = HashPassword(user.Password, salt);
+
+        return _user.Password == hashedPassword;
+    }
+
+    public bool Register(User user)
+    {
+        if (_user != null && _user.Username == user.Username)
+            return false;
+
+        var salt = GenerateSalt();
+        var hashedPassword = HashPassword(user.Password, salt);
+
+        _user = new User
+        {
+            Username = user.Username,
+            Password = hashedPassword,
+            Salt = Convert.ToBase64String(salt),
+            PrimaryBalance = 0 // Default balance for new user
+        };
+        SaveUser(_user);
+        return true;
+    }
+
+    private string HashPassword(string password, byte[] salt)
+    {
+        return Convert.ToBase64String(KeyDerivation.Pbkdf2(
+            password: password,
+            salt: salt,
+            prf: KeyDerivationPrf.HMACSHA256,
+            iterationCount: 10000,
+            numBytesRequested: 256 / 8));
+    }
+
+    private byte[] GenerateSalt()
+    {
+        byte[] salt = new byte[128 / 8]; // 16 bytes
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(salt);
+        }
+        return salt;
+    }
+
+    public string GetLoggedInUsername()
+    {
+        return _user?.Username ?? "Guest"; // Return the username of the logged-in user or default to "Guest"
+    }
+
+
+
+    // Update the balance of the single user's account
+    public bool UpdatePrimaryBalance(decimal newBalance) 
+    {
+        if (_user == null) return false;
+
+        _user.PrimaryBalance = newBalance;
+        SaveUser(_user);
+        return true;
+    }
+
+    public bool Logout()
+    {
+        return true; // Logout logic handled elsewhere
+    }
+
+    public string GetUserCurrency()
+    {
+        return "en-US"; // Default currency; adjust as needed
+    }
+
+    // Load the single user from file (deserialization)
+    private User LoadUser()
+    {
+        if (!File.Exists(UserFilePath))
+        {
+            return null; // If no file exists, return null
+        }
+
+        var json = File.ReadAllText(UserFilePath);
+        return JsonConvert.DeserializeObject<User>(json);
+    }
+
+    // Save the single user to file (serialization)
+    private void SaveUser(User user)
+    {
+        var json = JsonConvert.SerializeObject(user, Formatting.Indented);
+        File.WriteAllText(UserFilePath, json);
+    }
+
 }

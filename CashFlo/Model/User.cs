@@ -9,11 +9,11 @@ namespace CashFlo.Model
 {
     public class User
     {
-        public string Username { get; set; }
+        public string? Username { get; set; }
         public Currency Currency { get; set; }  // Currency is an enum
-        public string Password { get; set; }
-        public int PrimaryBalance { get; set; }
-        public string Salt { get; set; }
+        public string? Password { get; set; }
+        public decimal PrimaryBalance { get; set; }
+        public string? Salt { get; set; }
     }
 }
     

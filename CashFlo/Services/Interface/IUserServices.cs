@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using CashFlo.Model;
 
 namespace CashFlo.Services.Interface
@@ -10,13 +9,11 @@ namespace CashFlo.Services.Interface
         bool Login(User user);
         bool Register(User user);
         bool DeleteUser(string username);
-        List<User> GetAllUsers();
-        Task<string> GetLoggedInUsernameAsync();
-        Task<decimal> GetPrimaryBalanceAsync(string username); // Method to get the user's primary balance
-        Task<bool> UpdatePrimaryBalanceAsync(string username, int amount, bool isCredit); // Method to update the user's primary balance
-        Task<bool> LogoutAsync();
-        Task<string> GetUserCurrencyAsync();
-        
-        //Task<bool> SetUserCurrencyAsync(Currency currency);
+        string GetLoggedInUsername();  // Changed from Task<string> to string
+        bool UpdatePrimaryBalance( decimal amount);  // Changed from Task<bool> to bool
+        bool Logout();  // Changed from Task<bool> to bool
+        string GetUserCurrency();  // Changed from Task<string> to string
+
+        // Removed async version of SetUserCurrencyAsync
     }
 }

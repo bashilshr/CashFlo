@@ -11,9 +11,8 @@ namespace CashFlo.Model
         public string Description { get; set; }
         public decimal Amount { get; set; }
         public string Category { get; set; } // Income, Expense, etc.
-        public TransactionType Type { get; set; } // Enum for Income/Expense
+        public string Type { get; set; } 
         public List<string> Tags { get; set; } = new List<string>(); // Tags for the transaction
-
-        
     }
 }
+

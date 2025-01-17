@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using CashFlo.Model;
 
 namespace CashFlo.Services.Interface
@@ -8,21 +6,22 @@ namespace CashFlo.Services.Interface
     public interface ITransactionService
     {
         // Method to get all transactions for a specific user
-        Task<List<TransactionM>> GetAllTransactionsAsync(string username);
+        List<TransactionM> GetAllTransactions(string username);
 
         // Method to search for transactions based on search text
-        Task<List<TransactionM>> SearchTransactionsAsync(string username, string searchText);
+        List<TransactionM> SearchTransactions(string username, string searchText);
 
         // Method to add a new transaction
-        Task<bool> AddTransactionAsync(TransactionM transaction);
+        bool AddTransaction(TransactionM transaction);
 
         // Method to update an existing transaction
-        Task<bool> UpdateTransactionAsync(TransactionM updatedTransaction);
-
         // Method to delete a transaction by its ID and username
-        Task<bool> DeleteTransactionAsync(int transactionId, string username);
+        bool DeleteTransaction(int transactionId, string username);
 
         // Method to save the list of transactions to the JSON file
-        //Task SaveTransactionsAsync(TransactionM transactions);
+        void SaveTransactions(TransactionM transaction);
+
+        // Method to get the total balance for a user
+        decimal GetUserTotalBalance(string username);
     }
 }
